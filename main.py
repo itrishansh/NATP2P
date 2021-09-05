@@ -27,8 +27,9 @@ def PrepareSocket(port):
     return ss
 
 def ClearStaleServerInfo():
-    clear_url = 'https://psycox3.pythonanywhere.com/getall'
+    clear_url = 'https://psycox3.pythonanywhere.com/clear'
     r = urllib.request.urlopen(clear_url)
+    # res = r.read()
 
 def PrintAvailClients():
     get_url = 'https://psycox3.pythonanywhere.com/getall'
