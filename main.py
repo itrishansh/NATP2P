@@ -2,7 +2,14 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import stun
+
+# install with
+# pip install pystun3
+try:
+    import stun
+except:
+    print("Install stun with")
+    print('pip install pystun3')
 import sys
 import socket as sk
 import urllib.parse
@@ -13,7 +20,7 @@ name = ''
 host = '0.0.0.0'
 port = 65432
 
-def PrepareSocket():
+def PrepareSocket(port):
     ss = sk.socket(sk.AF_INET, sk.SOCK_DGRAM)
     ss.setsockopt(sk.SOL_SOCKET, sk.SO_REUSEADDR, 1)
     ss.bind((host, port))
@@ -59,7 +66,7 @@ def main():
         print(f'Unable to find external Port')
         sys.exit(1)
 
-    skt = PrepareSocket()
+    skt = PrepareSocket(port)
     #UpdateInfo(name, eport)
     availClients = {}
     while other not in availClients:
