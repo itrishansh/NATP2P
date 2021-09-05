@@ -26,6 +26,10 @@ def PrepareSocket(port):
     ss.bind((host, port))
     return ss
 
+def ClearStaleServerInfo():
+    clear_url = 'https://psycox3.pythonanywhere.com/getall'
+    r = urllib.request.urlopen(clear_url)
+
 def PrintAvailClients():
     get_url = 'https://psycox3.pythonanywhere.com/getall'
     r = urllib.request.urlopen(get_url)
@@ -67,6 +71,7 @@ def main():
         sys.exit(1)
 
     skt = PrepareSocket(port)
+    ClearStaleServerInfo()
     #UpdateInfo(name, eport)
     availClients = {}
     while other not in availClients:
