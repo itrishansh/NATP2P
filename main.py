@@ -5,16 +5,22 @@
 
 # install with
 # pip install pystun3
-try:
-    import stun
-except:
-    print("Install stun with")
-    print('pip install pystun3')
 import sys
 import socket as sk
 import urllib.parse
 import urllib.request
 import time
+import threading
+
+try:
+    import stun
+except:
+    print("Install stun with")
+    print('pip install pystun3')
+    sys.exit(1)
+
+from P2PUDPSocket import P2PUDPSocket
+from TkUI import TkUI
 
 name = ''
 host = '0.0.0.0'
@@ -64,6 +70,8 @@ def main():
     if len(sys.argv) >= 4:
         port = int(sys.argv[3])
 
+    # PUBLIC stun host can be found by googling ... or similar words.
+    # https://gist.github.com/sagivo/3a4b2f2c7ac6e1b5267c2f1f59ac6c6b
     nat_type, eip, eport = stun.get_ip_info(source_ip=host, source_port=port,
                                             stun_host='stun.l.google.com', stun_port=19302)
     print(f'({host}, {port}) -> ({eip}, {eport})')
@@ -97,11 +105,28 @@ def main():
         counter = counter + 1
         time.sleep(1)
 
-
     print('Exiting')
+
+def socketConnect(skt):
+    skt.connect()
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    main()
+    #main()
+    if len(sys.argv) < 3:
+        usage()
+        sys.exit(0)
+    name = sys.argv[1]
+    other = sys.argv[2]
+    if len(sys.argv) >= 4:
+        port = int(sys.argv[3])
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    ui = TkUI()
+    skt = P2PUDPSocket(name, other, local_port=port, logger=ui.appendMessage)
+    skTh = threading.Thread(target=socketConnect, args=(skt,), daemon=True)
+    skTh.start()
+    ui.setSendCb(skt.sendBytes)
+    ui.mainLoop()
+    #skt.connect()
+    #skt.disconnect()
+
