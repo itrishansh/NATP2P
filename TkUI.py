@@ -1,13 +1,14 @@
-import threading
+import queue
 import tkinter
 from tkinter import scrolledtext
 from tkinter import Button
 
-# Todo: Implement Enter to send
+# Done: Implement Enter to send
 class TkUI:
     def __init__(self, sendcb = None):
         self.sendcb = sendcb
         self.initComponents()
+        self.jobs = queue.Queue()
         pass
 
     def setSendCb(self, sendcb):
@@ -16,20 +17,39 @@ class TkUI:
     def clickSend(self):
         # print("Clicked Send Button.")
         msg = self.typeBx.get(1.0, tkinter.END)
-        # print("clickSend with %s" % repr(msg))
+        msg = msg.rstrip()
+        print("clickSend with %s" % repr(msg))
         self.typeBx.delete(1.0, tkinter.END)
         if self.sendcb:
+            print ("calling send cb")
             self.sendcb(msg.encode())
+            print("done with send cb")
         else:
+            print("sendcb is none")
             self.appendMessage(msg)
         #self.typeBx.insert(tkinter.INSERT, "Some text")
-        #self.appendMessage(msg)
+        self.appendMessage(msg)
 
     def appendMessage(self, msg: str):
+        if isinstance(msg, bytes):
+            msg = msg.decode().rstrip()
         if msg[-1] != '\n':
             msg = msg + '\n'
         self.msgBx.insert(tkinter.END, msg)
         self.msgBx.see(tkinter.END)
+
+    def postJob(self, key, value):
+        self.jobs.put((key, value))
+
+    def processJobs(self):
+        #print("Ui-Update called")
+        while not self.jobs.empty():
+            key, data = self.jobs.get()
+            print("Ui-Update", key, data)
+            if key == 'append_msg':
+                self.appendMessage(data)
+        # Reschedule to run after 100ms
+        self.window.after(100, self.processJobs)
 
     def initComponents(self):
         self.window = tkinter.Tk()
@@ -46,6 +66,7 @@ class TkUI:
         self.msgBx.pack(expand=True, fill = tkinter.BOTH)
         self.typeBx.pack(side = "left", expand = True, fill = tkinter.BOTH)
         self.btSend.pack(expand = True, fill = tkinter.BOTH)
+        self.window.after(100, self.processJobs)
 
     def mainLoop(self):
         # class Loop (threading.Thread):

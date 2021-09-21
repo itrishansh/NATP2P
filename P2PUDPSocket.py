@@ -12,6 +12,9 @@ except:
     print('pip install pystun3')
     sys.exit(1)
 
+# PUBLIC stun host can be found by googling ... or similar words.
+# https://gist.github.com/sagivo/3a4b2f2c7ac6e1b5267c2f1f59ac6c6b
+
 class P2PUDPSocket:
     get_url = 'https://psycox3.pythonanywhere.com/getall'
     clear_url = 'https://psycox3.pythonanywhere.com/clear'
@@ -124,6 +127,7 @@ class P2PUDPSocket:
 
     def sendBytes(self, data: bytes):
         self.ss.sendto(data, (self.oip, self.oport))
+        print(f'Sending {data} to', (self.oip, self.oport))
 
     def disconnect(self):
         self.termRecvTh = False
