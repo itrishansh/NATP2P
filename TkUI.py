@@ -22,7 +22,7 @@ class TkUI:
         self.typeBx.delete(1.0, tkinter.END)
         if self.sendcb:
             print ("calling send cb")
-            self.sendcb(msg.encode())
+            self.sendcb(msg)
             print("done with send cb")
         else:
             print("sendcb is none")
@@ -47,6 +47,7 @@ class TkUI:
             key, data = self.jobs.get()
             print("Ui-Update", key, data)
             if key == 'append_msg':
+                data = data[0] + " > " + data[1]
                 self.appendMessage(data)
         # Reschedule to run after 100ms
         self.window.after(100, self.processJobs)
@@ -89,7 +90,6 @@ class TkUI:
         # print(type(event))
         # print(dir(event))
         self.clickSend()
-
 
 if __name__ == '__main__':
     ui = TkUI()

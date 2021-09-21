@@ -118,7 +118,7 @@ async def run_server(sname, oname):
     @chat.on("message")
     def on_chat_msg(msg):
         print(chat.label, "(chat) >", msg)
-        ui.postJob('append_msg', msg)
+        ui.postJob('append_msg', (oname, msg))
         print(chat.label, "msg added")
 
     await pc.setLocalDescription(await pc.createOffer())
@@ -155,7 +155,7 @@ async def run_client(sname, oname):
             @channel.on("message")
             def on_chat_msg(msg):
                 print(channel.label, ">", repr(msg))
-                ui.postJob("append_msg", msg)
+                ui.postJob("append_msg", (oname, msg))
 
             print("Seting cb on channel chat DONE")
 
