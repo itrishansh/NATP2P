@@ -21,14 +21,14 @@ class TkUI:
         print("clickSend with %s" % repr(msg))
         self.typeBx.delete(1.0, tkinter.END)
         if self.sendcb:
-            print ("calling send cb")
+            #print ("calling send cb")
             self.sendcb(msg)
-            print("done with send cb")
+            #print("done with send cb")
         else:
             print("sendcb is none")
             self.appendMessage(msg)
         #self.typeBx.insert(tkinter.INSERT, "Some text")
-        self.appendMessage(msg)
+        #self.appendMessage(msg)
 
     def appendMessage(self, msg: str):
         if isinstance(msg, bytes):
@@ -45,7 +45,7 @@ class TkUI:
         #print("Ui-Update called")
         while not self.jobs.empty():
             key, data = self.jobs.get()
-            print("Ui-Update", key, data)
+            #print("Ui-Update", key, data)
             if key == 'append_msg':
                 data = data[0] + " > " + data[1]
                 self.appendMessage(data)
@@ -59,7 +59,7 @@ class TkUI:
         self.botFrame = tkinter.Frame(self.window)
         self.msgBx = scrolledtext.ScrolledText(self.topFrame)
         self.typeBx = scrolledtext.ScrolledText(self.botFrame, height=5)
-        # self.typeBx.bind("<KeyPress>", self.typeBoxKeyDown)
+        self.typeBx.bind("<KeyPress-Return>", self.typeBoxKeyDown)
         self.typeBx.bind("<KeyRelease-Return>", self.typeBoxKeyUp)
         self.btSend = Button(self.botFrame, text="Send", command=self.clickSend)
         self.topFrame.pack(expand=True, fill = tkinter.BOTH)
@@ -70,26 +70,17 @@ class TkUI:
         self.window.after(100, self.processJobs)
 
     def mainLoop(self):
-        # class Loop (threading.Thread):
-        #     def __init__(self, window):
-        #         threading.Thread.__init__(self)
-        #         self.win = window
-        #     def run(self):
-        #         self.win.mainloop()
-        # th = Loop(self.window)
-        # th.start()
-        # th = threading.Thread(target=self.window.mainloop)
-        # th.daemon = True
-        # th.start()
         self.window.mainloop()
 
-    def typeBoxKeyDown(self):
-        pass
+    def typeBoxKeyDown(self, event):
+        self.clickSend()
+        #print(dir(event))
 
     def typeBoxKeyUp(self, event):
         # print(type(event))
         # print(dir(event))
-        self.clickSend()
+        # self.clickSend()
+        self.typeBx.delete(1.0, tkinter.END)
 
 if __name__ == '__main__':
     ui = TkUI()
