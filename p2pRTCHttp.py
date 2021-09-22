@@ -6,12 +6,13 @@ import time
 import threading
 import urllib.parse
 import urllib.request
+import logging
 
 try:
     from aiortc import RTCIceCandidate, RTCPeerConnection, RTCSessionDescription
     from aiortc.contrib.signaling import BYE
 except:
-    print("Please install aiortc")
+    print("Please install aiortc with below command")
     print("pip install aiortc")
     sys.exit(1)
 
@@ -82,42 +83,50 @@ def channel_send(channel, message):
 async def run_server(sname, oname):
     signalling = HTTPLongPollSignalling(sname, oname)
     pc = RTCPeerConnection()
+    control = pc.createDataChannel("control")
+    print("Creating channel", control.label, "id:", control.id)
     chat = pc.createDataChannel("chat")
-    print("Creating channel", chat.label)
-    pch = pc.createDataChannel("ping")
-    print("Creating channel", pch.label)
+    print("Creating channel", chat.label, "id:", chat.id)
+    # pch = pc.createDataChannel("ping")
+    # print("Creating channel", pch.label, "id:", pch.id)
 
     signalling.clearAllSDP()
     print("Waiting for client")
 
-    async def send_pings():
-        while True:
-            channel_send(pch, "ping %d" % current_stamp())
-            await asyncio.sleep(1)
-
-    @pch.on("open")
-    def on_open():
-        print("channel ping opened")
-        asyncio.ensure_future(send_pings())
-
-    @pch.on("message")
-    def on_message(message):
-        print(pch.label, "(ping) <", message)
-
-        if isinstance(message, str) and message.startswith("pong"):
-            elapsed_ms = (current_stamp() - int(message[5:])) / 1000
-            print(" RTT %.2f ms" % elapsed_ms)
+    # async def send_pings(ch):
+    #     while True:
+    #         channel_send(ch, "ping %d" % current_stamp())
+    #         await asyncio.sleep(10)
+    #
+    # @pch.on("open")
+    # def on_open():
+    #     print("channel ping opened")
+    #     # asyncio.ensure_future(send_pings(pch))
+    #
+    # @pch.on("message")
+    # def on_message(message):
+    #     print(pch.label, "(ping) <", message)
+    #
+    #     if isinstance(message, str) and message.startswith("pong"):
+    #         elapsed_ms = (current_stamp() - int(message[5:])) / 1000
+    #         print(" RTT %.2f ms" % elapsed_ms)
 
     @chat.on("open")
     def on_chat_connect():
-        ui.setSendCb(chat.send)
-        chat.send("Channel established: Chat")
-        ui.postJob('append_msg', "Channel established: Chat")
-
+        loop = asyncio.get_event_loop()
+        ui.setSendCb(lambda msg: (
+            print("calling send on channel", chat.label, "id:", chat.id, "with", repr(msg)),
+            #chat.send(msg),
+            loop.call_soon_threadsafe(channel_send, chat, msg),
+            ui.postJob('append_msg', (sname, msg))
+        ))
+        ui.postJob('append_msg', ("system", "Channel established: Chat"))
+        #chat.send("Channel established: Chat")
+        #asyncio.ensure_future(send_pings(chat))
 
     @chat.on("message")
     def on_chat_msg(msg):
-        print(chat.label, "(chat) >", msg)
+        print(chat.label, chat.id, ">", msg)
         ui.postJob('append_msg', (oname, msg))
         print(chat.label, "msg added")
 
@@ -127,7 +136,6 @@ async def run_server(sname, oname):
     obj = object_from_string(data)
     await pc.setRemoteDescription(obj)
 
-    #ui.mainLoop()
     while True:
         await asyncio.sleep(1)
 
@@ -137,7 +145,7 @@ async def run_client(sname, oname):
 
     @pc.on("datachannel")
     def on_datachannel(channel):
-        print(channel.label, "-", "created by remote party")
+        print(channel.label, "with id", channel.id, "-", "created by remote party")
 
         if channel.label == 'ping':
             @channel.on("message")
@@ -148,27 +156,28 @@ async def run_client(sname, oname):
                     # reply
                     channel_send(channel, "pong" + message[4:])
         elif channel.label == 'chat':
-            print ("Seting cb on channel chat")
+            print ("Setting cb on channel chat")
+            loop = asyncio.get_event_loop()
             ui.setSendCb(lambda msg:(
-                                        print("calling send on ch", channel.label, "with", repr(msg)),
-                                        channel.send(msg)))
-            @channel.on("message")
+                print("calling send on channel", channel.label, "id:", channel.id, "with", repr(msg)),
+                loop.call_soon_threadsafe(channel_send, channel, msg),
+                ui.postJob('append_msg', (sname, msg)))
+            )
+            ui.postJob('append_msg', ("system", "Channel established: Chat"))
+            @channel.on('message')
             def on_chat_msg(msg):
-                print(channel.label, ">", repr(msg))
+                print(channel.label, ">", msg)
                 ui.postJob("append_msg", (oname, msg))
 
-            print("Seting cb on channel chat DONE")
+            print("Setting cb on channel chat DONE")
 
-    #data = input("Please enter SDP from server: ")
     data = await signalling.getRemoteSDP()
     obj = object_from_string(data)
-    #print("==================")
+
     await pc.setRemoteDescription(obj)
     await pc.setLocalDescription(await pc.createAnswer())
     signalling.updateSDP(object_to_string(pc.localDescription))
-    #print(object_to_string(pc.localDescription))
 
-    #ui.mainLoop()
     while True:
         await asyncio.sleep(1)
 
@@ -187,7 +196,8 @@ def run_async(args):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(coro)
+        #loop.run_until_complete(coro)
+        asyncio.run(coro, debug=True)
     except KeyboardInterrupt:
         pass
 
@@ -198,6 +208,14 @@ def main():
     parser.add_argument("peer_name")
 
     args = parser.parse_args()
+
+    # ch = logging.StreamHandler()
+    # ch.setLevel(logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s | %(name)-25s | %(levelname)-8s | %(message)s')
+    # aiortc_logger = logging.getLogger("aiortc")
+    # aiortc_logger.setLevel(logging.DEBUG)
+    # aio_logger = logging.getLogger("asyncio")
+    # aio_logger.setLevel(logging.WARNING)
 
     print(args)
     #threading.Thread(target=UiThread, daemon=True).start()
