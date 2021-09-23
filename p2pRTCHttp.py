@@ -50,9 +50,9 @@ class HTTPLongPollSignalling:
         data = urllib.parse.urlencode({'sname': self.sname, 'oname': self.oname,
                                        'data' : sdp})
         data = data.encode('ascii')
-        #print(data)
+        # print(data)
         res = urllib.request.urlopen(HTTPLongPollSignalling.add_url, data)
-        #print(res.read().decode())
+        # print(res.read().decode())
 
     async def getRemoteSDP(self):
         while True:
@@ -69,7 +69,6 @@ ui = None
 time_start = None
 def current_stamp():
     global time_start
-
     if time_start is None:
         time_start = time.time()
         return 0
@@ -115,14 +114,13 @@ async def run_server(sname, oname):
     def on_chat_connect():
         loop = asyncio.get_event_loop()
         ui.setSendCb(lambda msg: (
-            print("calling send on channel", chat.label, "id:", chat.id, "with", repr(msg)),
-            #chat.send(msg),
+            # print("calling send on channel", chat.label, "id:", chat.id, "with", repr(msg)),
             loop.call_soon_threadsafe(channel_send, chat, msg),
             ui.postJob('append_msg', (sname, msg))
         ))
         ui.postJob('append_msg', ("system", "Channel established: Chat"))
-        #chat.send("Channel established: Chat")
-        #asyncio.ensure_future(send_pings(chat))
+        # chat.send("Channel established: Chat")
+        # asyncio.ensure_future(send_pings(chat))
 
     @chat.on("message")
     def on_chat_msg(msg):
@@ -153,20 +151,19 @@ async def run_client(sname, oname):
                 print(channel.label, "<", message)
 
                 if isinstance(message, str) and message.startswith("ping"):
-                    # reply
                     channel_send(channel, "pong" + message[4:])
         elif channel.label == 'chat':
             print ("Setting cb on channel chat")
             loop = asyncio.get_event_loop()
             ui.setSendCb(lambda msg:(
-                print("calling send on channel", channel.label, "id:", channel.id, "with", repr(msg)),
+                # print("calling send on channel", channel.label, "id:", channel.id, "with", repr(msg)),
                 loop.call_soon_threadsafe(channel_send, channel, msg),
                 ui.postJob('append_msg', (sname, msg)))
             )
             ui.postJob('append_msg', ("system", "Channel established: Chat"))
             @channel.on('message')
             def on_chat_msg(msg):
-                print(channel.label, ">", msg)
+                # print(channel.label, ">", msg)
                 ui.postJob("append_msg", (oname, msg))
 
             print("Setting cb on channel chat DONE")
@@ -196,7 +193,7 @@ def run_async(args):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        #loop.run_until_complete(coro)
+        # loop.run_until_complete(coro)
         asyncio.run(coro, debug=True)
     except KeyboardInterrupt:
         pass
@@ -218,7 +215,7 @@ def main():
     # aio_logger.setLevel(logging.WARNING)
 
     print(args)
-    #threading.Thread(target=UiThread, daemon=True).start()
+    # threading.Thread(target=UiThread, daemon=True).start()
     threading.Thread(target=run_async, args=(args,), daemon=True).start()
     UiThread()
     print("Exiting")

@@ -18,17 +18,17 @@ class TkUI:
         # print("Clicked Send Button.")
         msg = self.typeBx.get(1.0, tkinter.END)
         msg = msg.rstrip()
-        print("clickSend with %s" % repr(msg))
+        # print("clickSend with %s" % repr(msg))
         self.typeBx.delete(1.0, tkinter.END)
         if self.sendcb:
-            #print ("calling send cb")
+            # print ("calling send cb")
             self.sendcb(msg)
-            #print("done with send cb")
+            # print("done with send cb")
         else:
             print("sendcb is none")
             self.appendMessage(msg)
-        #self.typeBx.insert(tkinter.INSERT, "Some text")
-        #self.appendMessage(msg)
+        # self.typeBx.insert(tkinter.INSERT, "Some text")
+        # self.appendMessage(msg)
 
     def appendMessage(self, msg: str):
         if isinstance(msg, bytes):
@@ -42,10 +42,10 @@ class TkUI:
         self.jobs.put((key, value))
 
     def processJobs(self):
-        #print("Ui-Update called")
+        # print("Ui-Update called")
         while not self.jobs.empty():
             key, data = self.jobs.get()
-            #print("Ui-Update", key, data)
+            # print("Ui-Update", key, data)
             if key == 'append_msg':
                 data = data[0] + " > " + data[1]
                 self.appendMessage(data)
@@ -74,7 +74,7 @@ class TkUI:
 
     def typeBoxKeyDown(self, event):
         self.clickSend()
-        #print(dir(event))
+        # print(dir(event))
 
     def typeBoxKeyUp(self, event):
         # print(type(event))
